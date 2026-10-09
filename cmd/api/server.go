@@ -39,14 +39,26 @@ func (app *application) serve() error {
 		err := srv.Shutdown(ctx)
 		if err != nil {
 			shutdownError <- err
+			return
 		}
 
 		app.logger.PrintInfo("completing background tasks", map[string]string{
 			"addr": srv.Addr,
 		})
 
-		app.wg.Wait()
-		shutdownError <- nil
+		waitDone := make(chan struct{})
+
+		go func() {
+			app.wg.Wait()
+			close(waitDone)
+		}()
+
+		select {
+		case <-waitDone:
+			shutdownError <- nil
+		case <-time.After(5 * time.Second):
+			shutdownError <- errors.New("background tasks did not complete within the shutdown grace period")
+		}
 	}()
 
 	app.logger.PrintInfo("starting server", map[string]string{
