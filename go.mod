@@ -1,4 +1,4 @@
-module greenlight.alexedwards.net
+module github.com/daggix02-m/greenlight-let-s-go-further-
 
 go 1.26.0
 

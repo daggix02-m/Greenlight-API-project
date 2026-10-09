@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"greenlight.alexedwards.net/internal/data"
-	"greenlight.alexedwards.net/internal/validator"
+	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/data"
+	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/validator"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {

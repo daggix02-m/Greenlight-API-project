@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"greenlight.alexedwards.net/internal/data"
+	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/data"
 
 	"github.com/felixge/httpsnoop"
 	"github.com/pascaldekloe/jwt"
@@ -133,12 +133,12 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		if claims.Issuer != "greenlight.alexedwards.net" {
+		if claims.Issuer != "github.com/daggix02-m/greenlight-let-s-go-further-" {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
 
-		if !claims.AcceptAudience("greenlight.alexedwards.net") {
+		if !claims.AcceptAudience("github.com/daggix02-m/greenlight-let-s-go-further-") {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"greenlight.alexedwards.net/internal/data"
-	"greenlight.alexedwards.net/internal/validator"
+	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/data"
+	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/validator"
 
 	"github.com/pascaldekloe/jwt"
 )
@@ -61,8 +61,8 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 	claims.Issued = jwt.NewNumericTime(time.Now())
 	claims.NotBefore = jwt.NewNumericTime(time.Now())
 	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
-	claims.Issuer = "greenlight.alexedwards.net"
-	claims.Audiences = []string{"greenlight.alexedwards.net"}
+	claims.Issuer = "github.com/daggix02-m/greenlight-let-s-go-further-"
+	claims.Audiences = []string{"github.com/daggix02-m/greenlight-let-s-go-further-"}
 
 	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(app.config.jwt.secret))
 	if err != nil {
