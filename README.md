@@ -9,7 +9,7 @@ with PostgreSQL. It is a faithful reproduction of the **Greenlight** project
 from [Let's Go / Let's Go Further](https://lets-go.alexedwards.net) by Alex
 Edwards, built directly from the book with no architectural substitutions —
 standard library HTTP routing, hand-rolled middleware, `database/sql`, and
-zero comments in the source.
+no comments in the production source.
 
 ## Highlights
 
@@ -117,7 +117,7 @@ curl -i http://localhost:4000/v1/movies \
 | POST   | `/v1/tokens/authentication` | Public (email + password → JWT)             |
 | POST   | `/v1/tokens/activation`     | Public (resend activation token)            |
 | POST   | `/v1/tokens/password-reset` | Public (request password-reset token)       |
-| GET    | `/debug/vars`         | Public (Go `expvar` diagnostics)                  |
+| GET    | `/debug/vars`         | Non-production only (Go `expvar` diagnostics)      |
 
 Activated accounts are granted `movies:read`. `movies:write` (create, update,
 delete) can be granted by inserting into the `users_permissions` table.
@@ -149,9 +149,14 @@ defaults. See `.env.example` for a ready-made template.
 | —                    | `-smtp-sender` | `Greenlight <no-reply@example.com>` | From header          |
 | —                    | `-limiter-rps` / `-limiter-burst` / `-limiter-enabled` | `2` / `4` / `true` | Per-IP rate limit  |
 | —                    | `-cors-trusted-origins` | —         | Space-separated allowed origins        |
+| —                    | `-trusted-proxies`  | —         | Proxy IPs/CIDRs allowed to set `X-Forwarded-For` (rate limiting falls back to the socket address otherwise) |
 | —                    | `-db-max-open-conns` / `-db-max-idle-conns` / `-db-max-idle-time` | `25` / `25` / `15m` | Pool tuning |
 
 In production you must set `JWT_SECRET` and point `-smtp-*` at a real relay.
+The JWT secret is validated at startup: it must always be set, and when
+`-env=production` it must be at least 32 bytes and must not be the bundled
+demo value — the API refuses to boot otherwise. `/debug/vars` is only routed
+outside production.
 
 ## Project structure
 
@@ -159,7 +164,7 @@ In production you must set `JWT_SECRET` and point `-smtp-*` at a real relay.
 cmd/api/            entry point: main, routes, handlers, middleware, helpers
 internal/data/      models — movies, users, tokens, permissions, filters
 internal/jsonlog/   leveled structured JSON logger (io.Writer-compatible)
-internal/mailer/    SMTP mailer with connection pooling
+internal/mailer/    SMTP mailer (embedded templates, per-send connection, 5s dial timeout)
 internal/validator/ reusable validation helpers
 migrations/         numbered SQL migrations (golang-migrate)
 docker/             Postgres initialization (citext extension)
@@ -175,8 +180,10 @@ go test -race ./...   # or: make audit (also runs gofmt/vet/staticcheck)
 
 The suite covers the validator primitives, runtime JSON codec, pagination
 rules, user/movie/token validation, the structured logger, JSON request
-helpers, and handler behavior (healthcheck, 404, 405) through the full
-middleware chain.
+helpers, client-IP resolution for the rate limiter, the full JWT rejection
+matrix (header parsing, signature, claims, issuer/audience, expiry),
+`requireActivatedUser` status codes, and handler behavior (healthcheck, 404,
+405, expvar gating) through the full middleware chain.
 
 ## License
 
