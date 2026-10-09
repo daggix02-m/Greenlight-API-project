@@ -6,6 +6,7 @@ import (
 	"expvar"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"runtime"
 	"strings"
@@ -48,7 +49,8 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
-	jwt struct {
+	trustedProxies []*net.IPNet
+	jwt            struct {
 		secret string
 	}
 }
@@ -85,6 +87,15 @@ func main() {
 
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
+
+	flag.Func("trusted-proxies", "Trusted proxy IPs or CIDRs for X-Forwarded-For (space separated)", func(val string) error {
+		networks, err := parseTrustedProxies(val)
+		if err != nil {
+			return err
+		}
+		cfg.trustedProxies = networks
 		return nil
 	})
 

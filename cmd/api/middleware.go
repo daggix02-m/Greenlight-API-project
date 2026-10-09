@@ -14,7 +14,6 @@ import (
 
 	"github.com/felixge/httpsnoop"
 	"github.com/pascaldekloe/jwt"
-	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
 
@@ -77,7 +76,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if app.config.limiter.enabled {
-			ip := realip.FromRequest(r)
+			ip := app.clientIP(r)
 
 			mu.Lock()
 
