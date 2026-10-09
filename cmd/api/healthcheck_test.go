@@ -6,40 +6,27 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/daggix02-m/greenlight-let-s-go-further-/internal/jsonlog"
 )
 
-// The metrics middleware registers expvar variables when routes() is built,
-// and expvar panics on duplicate names — so the test application is shared
-// across every test in this package and built exactly once.
-var (
-	sharedOnce    sync.Once
-	sharedApp     *application
-	sharedHandler http.Handler
-)
+func testApplication(env string) (*application, http.Handler) {
+	cfg := config{port: 4000, env: env}
+	cfg.limiter.rps = 1
+	cfg.limiter.burst = 1
+	cfg.jwt.secret = "test-secret"
 
-func testApplication() (*application, http.Handler) {
-	sharedOnce.Do(func() {
-		cfg := config{port: 4000, env: "test"}
-		cfg.limiter.rps = 1
-		cfg.limiter.burst = 1
-		cfg.jwt.secret = "test-secret"
+	app := &application{
+		config: cfg,
+		logger: jsonlog.New(io.Discard, jsonlog.LevelFatal),
+	}
 
-		sharedApp = &application{
-			config: cfg,
-			logger: jsonlog.New(io.Discard, jsonlog.LevelFatal),
-		}
-		sharedHandler = sharedApp.routes()
-	})
-
-	return sharedApp, sharedHandler
+	return app, app.routes()
 }
 
 func TestHealthcheckHandler(t *testing.T) {
-	_, h := testApplication()
+	_, h := testApplication("test")
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
 	rr := httptest.NewRecorder()
@@ -75,7 +62,7 @@ func TestHealthcheckHandler(t *testing.T) {
 }
 
 func TestUnknownRouteReturnsJSONNotFound(t *testing.T) {
-	_, h := testApplication()
+	_, h := testApplication("test")
 
 	req := httptest.NewRequest(http.MethodGet, "/v1/nonsense", nil)
 	rr := httptest.NewRecorder()
@@ -97,7 +84,7 @@ func TestUnknownRouteReturnsJSONNotFound(t *testing.T) {
 }
 
 func TestMethodNotAllowedReturnsJSONError(t *testing.T) {
-	_, h := testApplication()
+	_, h := testApplication("test")
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/healthcheck", nil)
 	rr := httptest.NewRecorder()
@@ -115,5 +102,29 @@ func TestMethodNotAllowedReturnsJSONError(t *testing.T) {
 	}
 	if !strings.Contains(body.Error, "POST") {
 		t.Errorf("error = %q, want it to mention POST", body.Error)
+	}
+}
+
+func TestExpvarAvailableOutsideProduction(t *testing.T) {
+	_, h := testApplication("development")
+
+	req := httptest.NewRequest(http.MethodGet, "/debug/vars", nil)
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+}
+
+func TestExpvarDisabledInProduction(t *testing.T) {
+	_, h := testApplication("production")
+
+	req := httptest.NewRequest(http.MethodGet, "/debug/vars", nil)
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d in production", rr.Code, http.StatusNotFound)
 	}
 }

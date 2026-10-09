@@ -28,7 +28,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", app.createActivationTokenHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/password-reset", app.createPasswordResetTokenHandler)
 
-	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
+	if app.config.env != "production" {
+		router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
+	}
 
 	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }
