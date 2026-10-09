@@ -119,7 +119,7 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	}
 
 	app.background(func() {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"passwordResetToken": token.Plaintext,
 		}
 
@@ -180,7 +180,7 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	}
 
 	app.background(func() {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"activationToken": token.Plaintext,
 		}
 

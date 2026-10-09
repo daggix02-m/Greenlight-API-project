@@ -99,7 +99,7 @@ func (m UserModel) Insert(user *User) error {
         VALUES ($1, $2, $3, $4)
         RETURNING id, created_at, version`
 
-	args := []interface{}{user.Name, user.Email, user.Password.hash, user.Activated}
+	args := []any{user.Name, user.Email, user.Password.hash, user.Activated}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -195,7 +195,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
         AND tokens.scope = $2
         AND tokens.expiry > $3`
 
-	args := []interface{}{tokenHash[:], tokenScope, time.Now()}
+	args := []any{tokenHash[:], tokenScope, time.Now()}
 
 	var user User
 
@@ -230,7 +230,7 @@ func (m UserModel) Update(user *User) error {
         WHERE id = $5 AND version = $6
         RETURNING version`
 
-	args := []interface{}{
+	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
