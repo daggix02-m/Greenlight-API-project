@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"expvar"
 	"flag"
 	"fmt"
@@ -19,6 +20,8 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+const devJWTSecret = "dev-only-change-me-before-production"
 
 var (
 	buildTime string
@@ -113,6 +116,10 @@ func main() {
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
+	if err := validateConfig(cfg); err != nil {
+		logger.PrintFatal(err, nil)
+	}
+
 	db, err := openDB(cfg)
 	if err != nil {
 		logger.PrintFatal(err, nil)
@@ -147,6 +154,23 @@ func main() {
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
+}
+
+func validateConfig(cfg config) error {
+	if cfg.jwt.secret == "" {
+		return errors.New("jwt secret must be set via the JWT_SECRET environment variable or the -jwt-secret flag")
+	}
+
+	if cfg.env == "production" {
+		if cfg.jwt.secret == devJWTSecret {
+			return errors.New("the default jwt secret must not be used in production")
+		}
+		if len(cfg.jwt.secret) < 32 {
+			return errors.New("jwt secret must be at least 32 bytes in production (generate one with: openssl rand -base64 48)")
+		}
+	}
+
+	return nil
 }
 
 func openDB(cfg config) (*sql.DB, error) {
