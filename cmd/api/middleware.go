@@ -127,6 +127,11 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
+		if claims.Expires == nil || claims.NotBefore == nil || len(claims.Audiences) == 0 {
+			app.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
 		if !claims.Valid(time.Now()) {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
