@@ -21,12 +21,12 @@ confirm:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	@go run ./cmd/api -db-dsn=${GREENLIGHT_DB_DSN} -jwt-secret=${JWT_SECRET}
+	@GREENLIGHT_DB_DSN='${GREENLIGHT_DB_DSN}' JWT_SECRET='${JWT_SECRET}' go run ./cmd/api
 
 ## run/lan: run the cmd/api application for access from other devices on the local network
 .PHONY: run/lan
 run/lan:
-	@go run ./cmd/api -env=production -db-dsn=${GREENLIGHT_DB_DSN} -jwt-secret=${JWT_SECRET} -smtp-host=localhost -smtp-port=1025
+	@GREENLIGHT_DB_DSN='${GREENLIGHT_DB_DSN}' JWT_SECRET='${JWT_SECRET}' go run ./cmd/api -env=production -smtp-host=localhost -smtp-port=1025
 
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
