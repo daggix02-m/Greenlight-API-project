@@ -67,6 +67,12 @@ type application struct {
 }
 
 func main() {
+	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+
+	if err := loadEnvFiles(".env", ".envrc"); err != nil {
+		logger.PrintFatal(err, nil)
+	}
+
 	var cfg config
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
@@ -113,8 +119,6 @@ func main() {
 		fmt.Printf("Build time:\t%s\n", buildTime)
 		os.Exit(0)
 	}
-
-	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	if err := validateConfig(cfg); err != nil {
 		logger.PrintFatal(err, nil)

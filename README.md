@@ -71,10 +71,13 @@ Mailpit for local email delivery.
 ```bash
 cp .env.example .envrc   # then edit DSN / JWT secret for your machine
 make db/migrations/up    # apply migrations
-make run/api             # start the API on :4000
+make run/api             # start the API on :4000 (or: go run ./cmd/api)
 ```
 
-`.envrc` and `.env` are gitignored — never commit real secrets. Useful
+`.envrc` and `.env` are gitignored — never commit real secrets. Both files are
+loaded automatically at startup when present in the working directory, so a
+bare `go run ./cmd/api` picks them up too (variables already in the
+environment are never overwritten). Useful
 targets: `make help` lists everything (`build/api`, `run/lan`, `db/psql`,
 `audit`, …).
 
@@ -136,7 +139,9 @@ Errors always return a JSON envelope — for example a validation failure:
 ## Configuration
 
 Settings come from command-line flags; two have environment-variable
-defaults. See `.env.example` for a ready-made template.
+defaults. A `.env` or `.envrc` file in the working directory is loaded at
+startup before flag defaults are read — existing environment variables and
+flags always take precedence. See `.env.example` for a ready-made template.
 
 | Env variable         | Flag           | Default        | Purpose                                |
 | -------------------- | -------------- | -------------- | -------------------------------------- |
