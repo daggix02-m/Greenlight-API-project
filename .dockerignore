@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+bin/
+.env
+.envrc
+.env.local
+coverage.out
+*.test
+*.prof
+README.md
+LICENSE
