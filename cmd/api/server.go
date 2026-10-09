@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,6 +19,7 @@ func (app *application) serve() error {
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
+		ErrorLog:     log.New(app.logger, "", 0),
 	}
 
 	shutdownError := make(chan error)
