@@ -1,0 +1,56 @@
+name: greenlight
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: greenlight
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pa55word}
+      POSTGRES_DB: greenlight
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U greenlight -d greenlight"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  migrate:
+    image: migrate/migrate:v4.18.1
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - "-path"
+      - /migrations
+      - "-database"
+      - "postgres://greenlight:${POSTGRES_PASSWORD:-pa55word}@postgres:5432/greenlight?sslmode=disable"
+      - up
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      GREENLIGHT_DB_DSN: "postgres://greenlight:${POSTGRES_PASSWORD:-pa55word}@postgres:5432/greenlight?sslmode=disable"
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-before-production}
+    command:
+      - "-smtp-host=mailpit"
+      - "-smtp-port=1025"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+
+volumes:
+  pgdata:
