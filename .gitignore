@@ -1,3 +1,9 @@
 .envrc
+.env
+.env.local
 bin/
 .idea/
+coverage.out
+*.test
+*.prof
+
